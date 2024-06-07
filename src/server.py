@@ -2,11 +2,20 @@
 
 import os
 import time
+import json
 from prometheus_client import start_http_server, Gauge, Enum, Counter
 import requests
 
 
-class AppMetrics:
+class LegrandMetrics:
+    endpoint = os.environ["ENDPOINT_URL"]
+    client_id = os.environ["CLIENT_ID"]
+    client_secret = os.environ["CLIENT_SECRET"]
+    access_token = os.environ["ACCESS_TOKEN"]
+    refresh_token = os.environ["REFRESH_TOKEN"]
+    home_id = os.environ["HOME_ID"]
+    metadata = {}
+
     """
     Representation of Prometheus metrics and loop to fetch and transform
     application metrics into Prometheus metrics.
@@ -14,27 +23,55 @@ class AppMetrics:
 
     def __init__(self, polling_interval_seconds=10):
         self.polling_interval_seconds = polling_interval_seconds
+        with open('/app/src/metadata.json') as file:
+            self.metadata = json.load(file)
 
-        # Prometheus metrics to collect
-        # self.current_requests = Gauge(
-        #     "app_requests_current", "Current requests")
-        # self.pending_requests = Gauge(
-        #     "app_requests_pending", "Pending requests")
-        # self.total_uptime = Gauge("app_uptime", "Uptime")
-        # self.health = Enum("app_health", "Health", states=[
-        #                    "healthy", "unhealthy"])
-        self.todo_count = Gauge(
-            "todo_count", "Current todo elements", ['userid', 'completed'])
-        self.todo_done = Gauge(
-            "todo_done", "Current todo status", ['todo_id', 'title'])
+        self.module_device_info = Gauge(
+            "module_device_info", "Module informations status", ['device', 'name', 'tag', 'network_status', 'type', 'source'])
+        self.module_power_status = Gauge(
+            "module_power_status", "Module turned on or off", ['device', 'name', 'tag', 'type'])
+        self.module_power_consumption = Gauge(
+            "module_power_consumption", "Power consuption of module", ['device', 'name', 'tag', 'type'])
+        self.room_temperature = Gauge(
+            "room_temperature", "Temperature sensor", ['room_id'])
+        self.room_humidity = Gauge(
+            "room_humidity", "Humidity sensor", ['room_id'])
 
     def run_metrics_loop(self):
         """Metrics fetching loop"""
 
         while True:
+            if not self.check_token():
+                self.refresh_tokens()
+
             self.fetch()
             print("Gathering")
             time.sleep(self.polling_interval_seconds)
+
+    def check_token(self):
+        print("checking tokens")
+        request = requests.get(self.endpoint+"/api/homesdata", headers={
+            "Content-Type": "application/json", "Authorization": "Bearer "+self.access_token}, verify=False)
+        result = request.json()
+        if "error" in result:
+            print("KO")
+            return False
+        else:
+            print("OK")
+            return True
+
+    def refresh_tokens(self):
+        print("Refresh Tokens")
+        request_body = {
+            "grant_type": "refresh_token",
+            "refresh_token": self.refresh_token,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret
+        }
+        request = requests.post(self.endpoint+"/oauth2/token",
+                                data=request_body, verify=False)
+        os.environ["access_token"] = request.json()['access_token']
+        os.environ["refresh_token"] = request.json()['refresh_token']
 
     def fetch(self):
         """
@@ -43,25 +80,64 @@ class AppMetrics:
         """
 
         # Fetch raw status data from the application
-        resp = requests.get(url=f"https://jsonplaceholder.typicode.com/todos")
-        status_data = resp.json()
+        resp = requests.get(self.endpoint+"/api/homestatus", headers={
+            "Authorization": "Bearer "+self.access_token}, data={"home_id": self.home_id}, verify=False)
+        modules = resp.json()['body']['home']['modules']
+        rooms = resp.json()['body']['home']['rooms']
 
-        # Update Prometheus metrics with application metrics
-        # self.current_requests.set(status_data["current_requests"])
-        # self.pending_requests.set(status_data["pending_requests"])
-        # self.total_uptime.set(status_data["total_uptime"])
-        # self.health.state(status_data["health"])
-        for task in status_data:
-            if task["completed"] == False:
-                self.todo_count.labels(
-                    completed='false', userid=task["userId"]).inc()
-                self.todo_done.labels(
-                    todo_id=task["id"], title=task["title"]).set("1")
-            else:
-                self.todo_count.labels(
-                    completed='true', userid=task["userId"]).inc()
-                self.todo_done.labels(
-                    todo_id=task["id"], title=task["title"]).set("0")
+        for room in rooms:
+            self.room_temperature.labels(
+                room_id=room["id"]).set(room['therm_measured_temperature'])
+            self.room_humidity.labels(
+                room_id=room["id"]).set(room['humidity'])
+
+        for module in modules:
+            if "on" in module:
+                if module["reachable"]:
+                    if module["on"]:
+                        self.module_device_info.labels(
+                            device=self.metadata[module['id']]['name'],
+                            name=self.metadata[module['id']]['name'],
+                            tag=self.metadata[module['id']]['tag'],
+                            network_status="ONLINE",
+                            type=self.metadata[module['id']]['type'],
+                            source="Netatmo").set("1")
+
+                        self.module_power_status.labels(
+                            device=self.metadata[module['id']]['name'],
+                            name=self.metadata[module['id']]['name'],
+                            tag=self.metadata[module['id']]['tag'],
+                            type=self.metadata[module['id']]['type']).set("1")
+
+                        self.module_power_consumption.labels(
+                            device=self.metadata[module['id']]['name'],
+                            name=self.metadata[module['id']]['name'],
+                            tag=self.metadata[module['id']]['tag'],
+                            type=self.metadata[module['id']]['type']).set(str(module['power']))
+
+                    else:
+                        self.module_device_info.labels(
+                            device=self.metadata[module['id']]['name'],
+                            name=self.metadata[module['id']]['name'],
+                            tag=self.metadata[module['id']]['tag'],
+                            network_status="ONLINE",
+                            type=self.metadata[module['id']]['type'],
+                            source="Netatmo").set("1")
+
+                        self.module_power_status.labels(
+                            device=self.metadata[module['id']]['name'],
+                            name=self.metadata[module['id']]['name'],
+                            tag=self.metadata[module['id']]['tag'],
+                            type=self.metadata[module['id']]['type']).set("0")
+
+                else:
+                    self.module_device_info.labels(
+                        device=self.metadata[module['id']]['name'],
+                        name=self.metadata[module['id']]['name'],
+                        tag=self.metadata[module['id']]['tag'],
+                        network_status="OFFLINE",
+                        type=self.metadata[module['id']]['type'],
+                        source="Netatmo").set("1")
 
 
 def main():
@@ -71,7 +147,7 @@ def main():
         os.getenv("POLLING_INTERVAL_SECONDS", "600"))
     exporter_port = int(os.getenv("EXPORTER_PORT", "8000"))
 
-    app_metrics = AppMetrics(
+    app_metrics = LegrandMetrics(
         polling_interval_seconds=polling_interval_seconds
     )
     start_http_server(exporter_port)

@@ -1,0 +1,27 @@
+{
+    "00:04:74:00:00:09:75:0d": {
+        "name": "Machine à laver",
+        "tag": "Salle de Bain",
+        "type": "Electroménager"
+    },
+    "00:04:74:00:00:09:75:0b": {
+        "name": "Frigo + Lave Vaisselle",
+        "tag": "Cuisine",
+        "type": "Electroménager"
+    },
+    "00:04:74:00:00:09:75:49": {
+        "name": "Four",
+        "tag": "Cuisine",
+        "type": "Electroménager"
+    },
+    "00:04:74:00:00:22:c6:85": {
+        "name": "Spot Canapé",
+        "tag": "Salle",
+        "type": "Prise"
+    },
+    "00:04:74:00:00:23:aa:a3": {
+        "name": "Chauffe Eau",
+        "tag": "Cuisine",
+        "type": "Electroménager"
+    }
+}
