@@ -49,29 +49,32 @@ class LegrandMetrics:
             time.sleep(self.polling_interval_seconds)
 
     def check_token(self):
-        print("checking tokens")
+        print("Checking tokens")
         request = requests.get(self.endpoint+"/api/homesdata", headers={
             "Content-Type": "application/json", "Authorization": "Bearer "+self.access_token}, verify=False)
         result = request.json()
         if "error" in result:
-            print("KO")
+            print("KO",result)
             return False
         else:
             print("OK")
             return True
 
     def refresh_tokens(self):
-        print("Refresh Tokens")
+        print("Refreshing Tokens")
         request_body = {
             "grant_type": "refresh_token",
             "refresh_token": self.refresh_token,
             "client_id": self.client_id,
             "client_secret": self.client_secret
         }
+        print("Body",request_body)
         request = requests.post(self.endpoint+"/oauth2/token",
                                 data=request_body, verify=False)
+        print("Result",request.json())
         os.environ["access_token"] = request.json()['access_token']
         os.environ["refresh_token"] = request.json()['refresh_token']
+        print("New tokens\n - Access:",os.environ["access_token"],"\n - Refresh:",os.environ["refresh_token"])
 
     def fetch(self):
         """
@@ -82,8 +85,13 @@ class LegrandMetrics:
         # Fetch raw status data from the application
         resp = requests.get(self.endpoint+"/api/homestatus", headers={
             "Authorization": "Bearer "+self.access_token}, data={"home_id": self.home_id}, verify=False)
-        modules = resp.json()['body']['home']['modules']
-        rooms = resp.json()['body']['home']['rooms']
+        modules = []
+        print(resp.json()['body']['home'].keys())
+        if modules in resp.json()['body']['home'].keys():
+            modules = resp.json()['body']['home']['modules']
+        rooms = []
+        if rooms in resp.json()['body']['home']:
+            rooms = resp.json()['body']['home']['rooms']
 
         for room in rooms:
             self.room_temperature.labels(
