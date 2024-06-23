@@ -45,7 +45,7 @@ class LegrandMetrics:
                 self.refresh_tokens()
 
             self.fetch()
-             print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
+            print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
                   " -- GATHERING DATA")
             time.sleep(self.polling_interval_seconds)
 
