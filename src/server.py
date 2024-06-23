@@ -1,11 +1,11 @@
 """Application exporter"""
 
 import os
-import time
 import json
 from prometheus_client import start_http_server, Gauge, Enum, Counter
 import requests
 
+urllib3.disable_warnings()
 
 class LegrandMetrics:
     endpoint = os.environ["ENDPOINT_URL"]
@@ -45,36 +45,42 @@ class LegrandMetrics:
                 self.refresh_tokens()
 
             self.fetch()
-            print("Gathering")
+             print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
+                  " -- GATHERING DATA")
             time.sleep(self.polling_interval_seconds)
 
     def check_token(self):
-        print("Checking tokens")
+        print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+" -- CHECKING TOKENS")
         request = requests.get(self.endpoint+"/api/homesdata", headers={
             "Content-Type": "application/json", "Authorization": "Bearer "+self.access_token}, verify=False)
         result = request.json()
         if "error" in result:
-            print("KO",result)
+            print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
+                  "    Token Outdated:", result)
             return False
         else:
-            print("OK")
+            print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    Token OK")
             return True
 
     def refresh_tokens(self):
-        print("Refreshing Tokens")
+        print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+" -- REFRESHING TOKENS")
         request_body = {
             "grant_type": "refresh_token",
             "refresh_token": self.refresh_token,
             "client_id": self.client_id,
             "client_secret": self.client_secret
         }
-        print("Body",request_body)
+        print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    Body:", request_body)
         request = requests.post(self.endpoint+"/oauth2/token",
                                 data=request_body, verify=False)
-        print("Result",request.json())
-        os.environ["access_token"] = request.json()['access_token']
-        os.environ["refresh_token"] = request.json()['refresh_token']
-        print("New tokens\n - Access:",os.environ["access_token"],"\n - Refresh:",os.environ["refresh_token"])
+        print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
+              "    Result:", request.json())
+        os.environ["ACCESS_TOKEN"] = request.json()['access_token']
+        os.environ["REFRESH_TOKEN"] = request.json()['refresh_token']
+        self.access_token = os.environ["ACCESS_TOKEN"]
+        self.refresh_token = os.environ["REFRESH_TOKEN"]
+        print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    OS ENV VAR:",
+              os.environ["ACCESS_TOKEN"], os.environ["REFRESH_TOKEN"])
 
     def fetch(self):
         """
@@ -87,10 +93,10 @@ class LegrandMetrics:
             "Authorization": "Bearer "+self.access_token}, data={"home_id": self.home_id}, verify=False)
         modules = []
         print(resp.json()['body']['home'].keys())
-        if modules in resp.json()['body']['home'].keys():
+        if "modules" in resp.json()['body']['home']:
             modules = resp.json()['body']['home']['modules']
         rooms = []
-        if rooms in resp.json()['body']['home']:
+        if "rooms" in resp.json()['body']['home']:
             rooms = resp.json()['body']['home']['rooms']
 
         for room in rooms:
