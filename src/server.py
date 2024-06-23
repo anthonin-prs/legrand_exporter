@@ -4,6 +4,8 @@ import os
 import json
 from prometheus_client import start_http_server, Gauge, Enum, Counter
 import requests
+import time
+import urllib3
 
 urllib3.disable_warnings()
 
