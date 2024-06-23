@@ -94,7 +94,6 @@ class LegrandMetrics:
         resp = requests.get(self.endpoint+"/api/homestatus", headers={
             "Authorization": "Bearer "+self.access_token}, data={"home_id": self.home_id}, verify=False)
         modules = []
-        print(resp.json()['body']['home'].keys())
         if "modules" in resp.json()['body']['home']:
             modules = resp.json()['body']['home']['modules']
         rooms = []
