@@ -77,12 +77,16 @@ class LegrandMetrics:
                                 data=request_body, verify=False)
         print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
               "    Result:", request.json())
-        os.environ["ACCESS_TOKEN"] = request.json()['access_token']
-        os.environ["REFRESH_TOKEN"] = request.json()['refresh_token']
-        self.access_token = os.environ["ACCESS_TOKEN"]
-        self.refresh_token = os.environ["REFRESH_TOKEN"]
-        print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    OS ENV VAR:",
-              os.environ["ACCESS_TOKEN"], os.environ["REFRESH_TOKEN"])
+        try:
+            os.environ["ACCESS_TOKEN"] = request.json()['access_token']
+            os.environ["REFRESH_TOKEN"] = request.json()['refresh_token']
+            self.access_token = os.environ["ACCESS_TOKEN"]
+            self.refresh_token = os.environ["REFRESH_TOKEN"]
+            print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    OS ENV VAR:",
+                  os.environ["ACCESS_TOKEN"], os.environ["REFRESH_TOKEN"])
+        except Exception as e:
+            print("Error",e)
+            exit(1)
 
     def fetch(self):
         """
