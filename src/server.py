@@ -9,6 +9,7 @@ import urllib3
 
 urllib3.disable_warnings()
 
+
 class LegrandMetrics:
     endpoint = os.environ["ENDPOINT_URL"]
     client_id = os.environ["CLIENT_ID"]
@@ -85,7 +86,7 @@ class LegrandMetrics:
             print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    OS ENV VAR:",
                   os.environ["ACCESS_TOKEN"], os.environ["REFRESH_TOKEN"])
         except Exception as e:
-            print("Error",e)
+            print("Error", e)
             exit(1)
 
     def fetch(self):
@@ -139,7 +140,7 @@ class LegrandMetrics:
                             name=self.metadata[module['id']]['name'],
                             tag=self.metadata[module['id']]['tag'],
                             type=self.metadata[module['id']]['type']).set("0")
-                        
+
                         self.module_power_consumption.labels(
                             device=module['id'],
                             name=self.metadata[module['id']]['name'],
