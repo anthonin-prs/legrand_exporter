@@ -114,7 +114,7 @@ class LegrandMetrics:
             if "on" in module:
                 if module["reachable"]:
                     self.module_device_info.labels(
-                        device=self.metadata[module['id']]['name'],
+                        device=module['id'],
                         name=self.metadata[module['id']]['name'],
                         tag=self.metadata[module['id']]['tag'],
                         network_status="ONLINE",
@@ -122,33 +122,33 @@ class LegrandMetrics:
                         source="Netatmo").set("1")
                     if module["on"]:
                         self.module_power_status.labels(
-                            device=self.metadata[module['id']]['name'],
+                            device=module['id'],
                             name=self.metadata[module['id']]['name'],
                             tag=self.metadata[module['id']]['tag'],
                             type=self.metadata[module['id']]['type']).set("1")
 
                         self.module_power_consumption.labels(
-                            device=self.metadata[module['id']]['name'],
+                            device=module['id'],
                             name=self.metadata[module['id']]['name'],
                             tag=self.metadata[module['id']]['tag'],
                             type=self.metadata[module['id']]['type']).set(str(module['power']))
 
                     else:
                         self.module_power_status.labels(
-                            device=self.metadata[module['id']]['name'],
+                            device=module['id'],
                             name=self.metadata[module['id']]['name'],
                             tag=self.metadata[module['id']]['tag'],
                             type=self.metadata[module['id']]['type']).set("0")
                         
                         self.module_power_consumption.labels(
-                            device=self.metadata[module['id']]['name'],
+                            device=module['id'],
                             name=self.metadata[module['id']]['name'],
                             tag=self.metadata[module['id']]['tag'],
                             type=self.metadata[module['id']]['type']).set("0")
 
                 else:
                     self.module_device_info.labels(
-                        device=self.metadata[module['id']]['name'],
+                        device=module['id'],
                         name=self.metadata[module['id']]['name'],
                         tag=self.metadata[module['id']]['tag'],
                         network_status="OFFLINE",
