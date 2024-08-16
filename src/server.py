@@ -2,32 +2,51 @@
 
 import os
 import json
-from prometheus_client import start_http_server, Gauge, Enum, Counter
 import requests
-import time
 import urllib3
+from infisical_client import *
+from prometheus_client import start_http_server, Gauge, Enum, Counter
+import time
 
 urllib3.disable_warnings()
 
+infisical_settings = {
+    "domain": os.environ["INFISICAL_URL"],
+    "env": os.environ["INFISICAL_ENV"],
+    "project": os.environ["INFISICAL_PROJECT_ID"],
+    "client_id": os.environ["INFISICAL_CLIENT_ID"],
+    "client_secret": os.environ["INFISICAL_CLIENT_SECRET"]
+}
+
 
 class LegrandMetrics:
-    endpoint = os.environ["ENDPOINT_URL"]
-    client_id = os.environ["CLIENT_ID"]
-    client_secret = os.environ["CLIENT_SECRET"]
-    access_token = os.environ["ACCESS_TOKEN"]
-    refresh_token = os.environ["REFRESH_TOKEN"]
-    home_id = os.environ["HOME_ID"]
+    endpoint = ""
+    client_id = ""
+    client_secret = ""
+    access_token = ""
+    refresh_token = ""
+    home_id = ""
     metadata = {}
+    infisical_client = ""
 
     """
     Representation of Prometheus metrics and loop to fetch and transform
     application metrics into Prometheus metrics.
     """
 
-    def __init__(self, polling_interval_seconds=10):
+    def __init__(self, polling_interval_seconds, infisical_client, infisical_secrets, infisical_settings):
         self.polling_interval_seconds = polling_interval_seconds
+        self.infisical_client = infisical_client
+
         with open('/app/src/metadata.json') as file:
             self.metadata = json.load(file)
+
+        self.endpoint = infisical_secrets['ENDPOINT_URL']
+        self.client_id = infisical_secrets['CLIENT_ID']
+        self.client_secret = infisical_secrets['CLIENT_ID']
+        self.access_token = infisical_secrets['ACCESS_TOKEN']
+        self.refresh_token = infisical_secrets['REFRESH_TOKEN']
+        self.home_id = infisical_secrets['HOME_ID']
 
         self.module_device_info = Gauge(
             "module_device_info", "Module informations status", ['device', 'name', 'tag', 'network_status', 'type', 'source'])
@@ -78,11 +97,27 @@ class LegrandMetrics:
                                 data=request_body, verify=False)
         print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
               "    Result:", request.json())
+        if 'error' in request.json():
+            exit(1)
         try:
-            os.environ["ACCESS_TOKEN"] = request.json()['access_token']
-            os.environ["REFRESH_TOKEN"] = request.json()['refresh_token']
-            self.access_token = os.environ["ACCESS_TOKEN"]
-            self.refresh_token = os.environ["REFRESH_TOKEN"]
+            print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
+                  "    Updating infisical")
+            self.infisical_client.updateSecret(options=UpdateSecretOptions(
+                environment=infisical_settings['env'],
+                project_id=infisical_settings['project'],
+                path="/Supervision/Netatmo",
+                secret_name="ACCESS_TOKEN",
+                secret_value=request.json()['access_token'],
+            ))
+            self.infisical_client.updateSecret(options=UpdateSecretOptions(
+                environment=infisical_settings['env'],
+                project_id=infisical_settings['project'],
+                path="/Supervision/Netatmo",
+                secret_name="REFRESH_TOKEN",
+                secret_value=request.json()['refresh_token'],
+            ))
+            self.access_token = request.json()['access_token']
+            self.refresh_token = request.json()['refresh_token']
             print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    OS ENV VAR:",
                   os.environ["ACCESS_TOKEN"], os.environ["REFRESH_TOKEN"])
         except Exception as e:
@@ -164,9 +199,29 @@ def main():
         os.getenv("POLLING_INTERVAL_SECONDS", "600"))
     exporter_port = int(os.getenv("EXPORTER_PORT", "8000"))
 
+    infisical_client = InfisicalClient(ClientSettings(
+        auth=AuthenticationOptions(
+            universal_auth=UniversalAuthMethod(
+                client_id=infisical_settings['client_id'],
+                client_secret=infisical_settings['client_secret']
+            )
+        ),
+        site_url=infisical_settings['domain']
+    ))
+
+    infisical_secret_list = infisical_client.listSecrets(options=ListSecretsOptions(
+        environment=infisical_settings['env'],
+        project_id=infisical_settings['project'],
+        path="/Supervision/Netatmo"
+    ))
+    infisical_secrets = {}
+    for secret in infisical_secret_list:
+        infisical_secrets[secret.secret_key] = secret.secret_value
+
     app_metrics = LegrandMetrics(
-        polling_interval_seconds=polling_interval_seconds
+        polling_interval_seconds, infisical_client, infisical_secrets, infisical_settings
     )
+
     start_http_server(exporter_port)
     app_metrics.run_metrics_loop()
 
