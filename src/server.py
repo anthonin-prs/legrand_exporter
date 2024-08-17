@@ -43,7 +43,7 @@ class LegrandMetrics:
 
         self.endpoint = infisical_secrets['ENDPOINT_URL']
         self.client_id = infisical_secrets['CLIENT_ID']
-        self.client_secret = infisical_secrets['CLIENT_ID']
+        self.client_secret = infisical_secrets['CLIENT_SECRET']
         self.access_token = infisical_secrets['ACCESS_TOKEN']
         self.refresh_token = infisical_secrets['REFRESH_TOKEN']
         self.home_id = infisical_secrets['HOME_ID']
