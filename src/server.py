@@ -38,7 +38,8 @@ class LegrandMetrics:
         self.polling_interval_seconds = polling_interval_seconds
         self.infisical_client = infisical_client
 
-        with open('/app/src/metadata.json') as file:
+        # with open('/app/src/metadata.json') as file:
+        with open('metadata.json') as file:
             self.metadata = json.load(file)
 
         self.endpoint = infisical_secrets['ENDPOINT_URL']
@@ -102,14 +103,14 @@ class LegrandMetrics:
         try:
             print(str(time.strftime("%Y-%m-%d %H:%M:%S")) +
                   "    Updating infisical")
-            self.infisical_client.updateSecret(options=UpdateSecretOptions(
+            result = self.infisical_client.updateSecret(options=UpdateSecretOptions(
                 environment=infisical_settings['env'],
                 project_id=infisical_settings['project'],
                 path="/Supervision/Netatmo",
                 secret_name="ACCESS_TOKEN",
                 secret_value=request.json()['access_token'],
             ))
-            self.infisical_client.updateSecret(options=UpdateSecretOptions(
+            result = self.infisical_client.updateSecret(options=UpdateSecretOptions(
                 environment=infisical_settings['env'],
                 project_id=infisical_settings['project'],
                 path="/Supervision/Netatmo",
@@ -118,8 +119,8 @@ class LegrandMetrics:
             ))
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-            print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    OS ENV VAR:",
-                  os.environ["ACCESS_TOKEN"], os.environ["REFRESH_TOKEN"])
+            print(str(time.strftime("%Y-%m-%d %H:%M:%S"))+"    Now using thoses vars:",
+                  self.access_token, self.refresh_token)
         except Exception as e:
             print("Error", e)
             exit(1)
