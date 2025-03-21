@@ -38,7 +38,7 @@ class LegrandMetrics:
         self.polling_interval_seconds = polling_interval_seconds
         self.infisical_client = infisical_client
 
-        with open('metadata.json') as file:
+        with open('/app/src/metadata.json') as file:
             self.metadata = json.load(file)
 
         self.endpoint = infisical_secrets['ENDPOINT_URL']
