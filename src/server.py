@@ -38,7 +38,7 @@ class LegrandMetrics:
         self.polling_interval_seconds = polling_interval_seconds
         self.infisical_client = infisical_client
 
-        with open('/app/src/metadata.json') as file:
+        with open('metadata.json') as file:
             self.metadata = json.load(file)
 
         self.endpoint = infisical_secrets['ENDPOINT_URL']
@@ -131,8 +131,8 @@ class LegrandMetrics:
         """
 
         # Fetch raw status data from the application
-        resp = requests.get(self.endpoint+"/api/homestatus", headers={
-            "Authorization": "Bearer "+self.access_token}, data={"home_id": self.home_id}, verify=False)
+        resp = requests.get(self.endpoint+"/api/homestatus?home_id="+self.home_id, headers={
+            "Authorization": "Bearer "+self.access_token}, verify=False)
         modules = []
         if "modules" in resp.json()['body']['home']:
             modules = resp.json()['body']['home']['modules']
