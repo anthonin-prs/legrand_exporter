@@ -39,7 +39,7 @@ class LegrandMetrics:
         self.infisical_client = infisical_client
 
         with open('/app/src/metadata.json') as file:
-            # with open('src/metadata.json') as file:
+            # with open('src/metadata.json') as file: for local debug
             self.metadata = json.load(file)
 
         self.endpoint = infisical_secrets['ENDPOINT_URL']
