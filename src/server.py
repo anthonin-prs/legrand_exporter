@@ -39,7 +39,8 @@ class LegrandMetrics:
         self.infisical_client = infisical_client
 
         with open('/app/src/metadata.json') as file:
-            self.metadata = json.load(file)
+            # with open('src/metadata.json') as file:
+            self.metadata = json.load(fil²e)
 
         self.endpoint = infisical_secrets['ENDPOINT_URL']
         self.client_id = infisical_secrets['CLIENT_ID']
