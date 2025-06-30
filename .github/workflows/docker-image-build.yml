@@ -25,8 +25,8 @@ jobs:
       
     - name: Test Docker container
       run: |
-        docker run -d --name test-app -p $APP_PORT:$APP_PORT -e EXPORTER_PORT=7500 -e INFISICAL_URL='${{ env.INFISICAL_URL }}' -e INFISICAL_PROJECT_ID='${{ env.INFISICAL_PROJECT_ID }}' -e INFISICAL_ENV='${{ env.INFISICAL_ENV }}' -e INFISICAL_CLIENT_ID='${{ env.INFISICAL_CLIENT_ID }}' -e INFISICAL_CLIENT_SECRET='${{ env.INFISICAL_CLIENT_SECRET }}' ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
-        sleep 10
+        docker run -d --name test-app -p $APP_PORT:$APP_PORT -e EXPORTER_PORT=$APP_PORT -e INFISICAL_URL='${{ env.INFISICAL_URL }}' -e INFISICAL_PROJECT_ID='${{ env.INFISICAL_PROJECT_ID }}' -e INFISICAL_ENV='${{ env.INFISICAL_ENV }}' -e INFISICAL_CLIENT_ID='${{ env.INFISICAL_CLIENT_ID }}' -e INFISICAL_CLIENT_SECRET='${{ env.INFISICAL_CLIENT_SECRET }}' ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
+        sleep 5
         if curl -s http://localhost:$APP_PORT >/dev/null; then
           echo "App is running on port $APP_PORT"
           docker stop test-app
