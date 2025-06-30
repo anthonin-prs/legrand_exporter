@@ -25,7 +25,7 @@ jobs:
       
     - name: Test Docker container on port 8000
       run: |
-        docker run -d --name test-app -p 8000:8000 ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }} -e INFISICAL_URL='${{ env.INFISICAL_URL }}' -e INFISICAL_PROJECT_ID='${{ env.INFISICAL_PROJECT_ID }}' -e INFISICAL_ENV='${{ env.INFISICAL_ENV }}' -e INFISICAL_CLIENT_ID='${{ env.INFISICAL_CLIENT_ID }}' -e INFISICAL_CLIENT_SECRET='${{ env.INFISICAL_CLIENT_SECRET }}'
+        docker run -d --name test-app -p 8000:8000 -e INFISICAL_URL='${{ env.INFISICAL_URL }}' -e INFISICAL_PROJECT_ID='${{ env.INFISICAL_PROJECT_ID }}' -e INFISICAL_ENV='${{ env.INFISICAL_ENV }}' -e INFISICAL_CLIENT_ID='${{ env.INFISICAL_CLIENT_ID }}' -e INFISICAL_CLIENT_SECRET='${{ env.INFISICAL_CLIENT_SECRET }}' ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
         sleep 10
         if curl -s http://localhost:8000 >/dev/null; then
           echo "App is running on port 8000"
