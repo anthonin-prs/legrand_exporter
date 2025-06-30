@@ -86,6 +86,12 @@ jobs:
         username: ${{ vars.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_TOKEN }}
     
-    - name: Push the Docker image
-      run: |
-        docker push ${{ vars.IMAGE_TAG }}:${{ needs.set-newversion.outputs.version }}
+    - name: Build the Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          ${{ vars.IMAGE_TAG }}:${{ needs.set-newversion.outputs.version }}
+          ${{ vars.IMAGE_TAG }}:latest
