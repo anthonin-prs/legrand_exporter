@@ -1,0 +1,65 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-app:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Increment version
+      run: |
+        NEW_VERSION=$(cat .version | awk -F. '{$NF = $NF + 1;} 1' OFS=.)
+        echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+        echo $NEW_VERSION > .version
+
+    - name: Build the Docker image
+      run: docker build . -t ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
+      
+    - name: Test Docker container on port 8000
+      run: |
+        docker run -d --name test-app -p 8000:8000 ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
+        sleep 5
+        if curl -s http://localhost:8000 >/dev/null; then
+          echo "App is running on port 8000"
+          docker stop test-app
+          docker rm test-app
+        else
+          echo "App failed to start on port 8000"
+          docker stop test-app
+          docker rm test-app
+          exit 1
+        fi
+      
+  update-version:
+    runs-on: ubuntu-latest
+    needs: [test-app]
+
+    steps:
+    - name: Commit and push version update
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add .version
+        git commit -m "Increment version to ${{ env.NEW_VERSION }} [skip ci]"
+        git push origin main
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        
+  push-app:
+    runs-on: ubuntu-latest
+    needs: [test-app]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Push the Docker image
+      run: |
+        docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}
+        docker push ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
