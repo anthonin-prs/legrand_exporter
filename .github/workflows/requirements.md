@@ -10,3 +10,4 @@
 ### Variables
 - IMAGE_TAG (apresse/legrand_exporter)  
 - DOCKER_USERNAME (apresse)
+- APP_PORT (8000)
