@@ -21,7 +21,15 @@ jobs:
         echo $NEW_VERSION > .version
 
     - name: Build the Docker image
-      run: docker build . -t ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile
+        tags: |
+          ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
+          ${{ vars.IMAGE_TAG }}:latest
+    # - name: Build the Docker image
+    #   run: docker build . -t ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
       
     - name: Test Docker container
       run: |
@@ -65,8 +73,12 @@ jobs:
     needs: [test-app]
 
     steps:
+    - name: Login to Docker Registry
+      uses: docker/login-action@v3
+      with:
+        username: ${{ vars.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_TOKEN }}
     - uses: actions/checkout@v4
     - name: Push the Docker image
       run: |
-        docker login -u ${{ vars.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}
         docker push ${{ vars.IMAGE_TAG }}:${{ env.NEW_VERSION }}
